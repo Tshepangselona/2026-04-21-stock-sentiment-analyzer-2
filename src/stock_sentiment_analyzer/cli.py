@@ -85,6 +85,8 @@ def build_cli_inputs(
     cli_tickers: list[str],
     cli_sources: list[str],
 ) -> list[HeadlineInput]:
+    if not cli_headlines:
+        return []
     if len(cli_tickers) > len(cli_headlines):
         raise ValueError("You provided more --ticker values than --headline values.")
     if len(cli_sources) > len(cli_headlines):

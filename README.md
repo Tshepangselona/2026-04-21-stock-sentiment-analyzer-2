@@ -6,7 +6,8 @@ A lightweight Python project that scores stock-related news headlines as bullish
 
 - Scores individual headlines and batches of headlines
 - Uses finance-specific terms like `beats`, `cuts guidance`, `buyback`, and `fraud`
-- Returns an overall sentiment label plus a simple confidence score
+- Accepts plain headlines or structured records with optional `ticker` and `source`
+- Returns an overall sentiment label, confidence score, and bullish/bearish breakdown
 - Includes sample data and a small test suite
 
 ## Quick start
@@ -19,7 +20,13 @@ python -m stock_sentiment_analyzer.cli --file data/sample_headlines.json
 Or pass headlines directly:
 
 ```bash
-python -m stock_sentiment_analyzer.cli --headline "Microsoft rallies after strong cloud growth" --headline "Chipmaker drops on weak guidance"
+python -m stock_sentiment_analyzer.cli --headline "Microsoft rallies after strong cloud growth" --ticker MSFT --source Reuters --headline "Chipmaker drops on weak guidance" --ticker AMD --source Bloomberg
+```
+
+Machine-readable output:
+
+```bash
+python -m stock_sentiment_analyzer.cli --file data/sample_headlines.json --format json
 ```
 
 Run the tests:
@@ -49,4 +56,4 @@ The analyzer combines:
 3. Small adjustments for nearby amplifiers like `sharply`
 4. Basic negation handling for patterns like `not strong`
 
-This is a practical rule-based baseline, which makes it easy to inspect and extend. A natural next step would be to add source ingestion from news APIs, social media posts, or earnings transcripts.
+This is a practical rule-based baseline, which makes it easy to inspect and extend. The current version also detects ticker symbols in headlines like `$NVDA` and preserves ticker/source metadata from structured input.

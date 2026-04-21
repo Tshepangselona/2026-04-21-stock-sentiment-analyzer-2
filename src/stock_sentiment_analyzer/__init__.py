@@ -1,3 +1,3 @@
-from .analyzer import AnalysisResult, HeadlineAnalysis, SentimentAnalyzer
+from .analyzer import AnalysisResult, HeadlineAnalysis, HeadlineInput, SentimentAnalyzer
 
-__all__ = ["AnalysisResult", "HeadlineAnalysis", "SentimentAnalyzer"]
+__all__ = ["AnalysisResult", "HeadlineAnalysis", "HeadlineInput", "SentimentAnalyzer"]

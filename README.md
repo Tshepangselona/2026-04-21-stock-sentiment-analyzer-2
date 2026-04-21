@@ -9,6 +9,7 @@ A lightweight Python project that scores stock-related news headlines as bullish
 - Accepts plain headlines or structured records with optional `ticker` and `source`
 - Returns an overall sentiment label, confidence score, and bullish/bearish breakdown
 - Includes sample data and a small test suite
+- Can fetch real headlines from live APIs
 
 ## Quick start
 
@@ -27,6 +28,22 @@ Machine-readable output:
 
 ```bash
 python -m stock_sentiment_analyzer.cli --file data/sample_headlines.json --format json
+```
+
+Live data with Alpha Vantage:
+
+```bash
+$env:PYTHONPATH="src"
+$env:ALPHA_VANTAGE_API_KEY="your_key_here"
+python -m stock_sentiment_analyzer.cli --provider alpha_vantage --ticker NVDA --limit 5
+```
+
+Live data with NewsAPI:
+
+```bash
+$env:PYTHONPATH="src"
+$env:NEWSAPI_API_KEY="your_key_here"
+python -m stock_sentiment_analyzer.cli --provider newsapi --query "Nvidia earnings" --limit 5
 ```
 
 Run the tests:
@@ -57,3 +74,21 @@ The analyzer combines:
 4. Basic negation handling for patterns like `not strong`
 
 This is a practical rule-based baseline, which makes it easy to inspect and extend. The current version also detects ticker symbols in headlines like `$NVDA` and preserves ticker/source metadata from structured input.
+
+## Live API providers
+
+The project now supports:
+
+- `alpha_vantage`: Uses the official `NEWS_SENTIMENT` endpoint for market news
+- `newsapi`: Uses the official `/v2/everything` endpoint for article search
+
+Environment variables:
+
+- `ALPHA_VANTAGE_API_KEY`
+- `NEWSAPI_API_KEY`
+
+Notes:
+
+- Alpha Vantage works best when you already know the ticker.
+- NewsAPI is useful for broader keyword searches like earnings themes, companies, or sectors.
+- This workspace cannot guarantee live API verification without your keys and network approval, so the provider tests mock official response shapes locally.

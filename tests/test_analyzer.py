@@ -1,10 +1,12 @@
 import sys
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from stock_sentiment_analyzer.analyzer import HeadlineInput, SentimentAnalyzer
+from stock_sentiment_analyzer.data_sources import AlphaVantageNewsProvider, FetchRequest, NewsApiProvider
 
 
 class SentimentAnalyzerTests(unittest.TestCase):
@@ -61,6 +63,48 @@ class SentimentAnalyzerTests(unittest.TestCase):
 
     def analyze(self, headline: str):
         return self.analyzer.analyze_headline(headline)
+
+
+class ProviderTests(unittest.TestCase):
+    @patch.dict("os.environ", {"ALPHA_VANTAGE_API_KEY": "demo"})
+    def test_alpha_vantage_maps_feed_items(self) -> None:
+        provider = AlphaVantageNewsProvider()
+        payload = {
+            "feed": [
+                {
+                    "title": "Microsoft beats estimates as cloud revenue jumps",
+                    "source": "Reuters",
+                    "ticker_sentiment": [{"ticker": "MSFT"}],
+                }
+            ]
+        }
+
+        with patch.object(provider, "_request_json", return_value=payload):
+            headlines = provider.fetch(FetchRequest(ticker="MSFT", limit=5))
+
+        self.assertEqual(len(headlines), 1)
+        self.assertEqual(headlines[0].ticker, "MSFT")
+        self.assertEqual(headlines[0].source, "Reuters")
+
+    @patch.dict("os.environ", {"NEWSAPI_API_KEY": "demo"})
+    def test_newsapi_maps_articles(self) -> None:
+        provider = NewsApiProvider()
+        payload = {
+            "status": "ok",
+            "articles": [
+                {
+                    "title": "Tesla stock drops after weak delivery outlook",
+                    "source": {"name": "Bloomberg"},
+                }
+            ],
+        }
+
+        with patch.object(provider, "_request_json", return_value=payload):
+            headlines = provider.fetch(FetchRequest(ticker="TSLA", query="Tesla", limit=5))
+
+        self.assertEqual(len(headlines), 1)
+        self.assertEqual(headlines[0].ticker, "TSLA")
+        self.assertEqual(headlines[0].source, "Bloomberg")
 
 
 if __name__ == "__main__":

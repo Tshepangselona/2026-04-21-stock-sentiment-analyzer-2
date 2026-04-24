@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Stock Sentiment Analyzer</title>
+    <link rel="stylesheet" href="/app.css">
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <p class="eyebrow">Market Mood Console</p>
+        <h1>Turn raw stock headlines into a readable pulse.</h1>
+        <p class="hero-copy">
+          Analyze your own headlines or pull live news from a provider, then inspect what actually drove the score.
+        </p>
+      </header>
+
+      <main class="layout">
+        <section class="panel panel-form">
+          <div class="panel-heading">
+            <h2>Manual Analysis</h2>
+            <p>Paste one headline per line. Use `TICKER | SOURCE | HEADLINE` for richer input.</p>
+          </div>
+          <textarea id="headlineInput" rows="10">NVDA | Reuters | Nvidia surges after strong AI demand
+TSLA | Bloomberg | Tesla drops as deliveries miss expectations
+AAPL | CNBC | Apple expands buyback program after strong iPhone sales</textarea>
+          <button id="analyzeBtn" class="action">Analyze Headlines</button>
+        </section>
+
+        <section class="panel panel-form accent-panel">
+          <div class="panel-heading">
+            <h2>Live Fetch</h2>
+            <p>Query Alpha Vantage or NewsAPI using your configured API keys.</p>
+          </div>
+          <div class="field-row">
+            <label>
+              Provider
+              <select id="providerSelect">
+                <option value="alpha_vantage">Alpha Vantage</option>
+                <option value="newsapi">NewsAPI</option>
+              </select>
+            </label>
+            <label>
+              Limit
+              <input id="limitInput" type="number" min="1" max="20" value="5">
+            </label>
+          </div>
+          <div class="field-row">
+            <label>
+              Ticker
+              <input id="tickerInput" type="text" placeholder="NVDA">
+            </label>
+            <label>
+              Query
+              <input id="queryInput" type="text" placeholder="Nvidia earnings">
+            </label>
+          </div>
+          <button id="fetchBtn" class="action action-alt">Fetch Live Headlines</button>
+        </section>
+
+        <section class="panel panel-results">
+          <div class="panel-heading">
+            <h2>Sentiment Snapshot</h2>
+            <p id="statusLine">Ready when you are.</p>
+          </div>
+          <div id="summaryCards" class="summary-grid"></div>
+          <div id="headlineResults" class="results-list"></div>
+        </section>
+      </main>
+    </div>
+    <script src="/app.js"></script>
+  </body>
+  </html>

@@ -3,11 +3,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 import os
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
 from stock_sentiment_analyzer.analyzer import HeadlineInput
+
+
+_ENV_LOADED = False
 
 
 class NewsSourceError(RuntimeError):
@@ -28,6 +32,7 @@ class BaseNewsProvider:
         raise NotImplementedError
 
     def _get_required_api_key(self, env_var: str) -> str:
+        load_local_env()
         value = os.getenv(env_var)
         if value:
             return value
@@ -165,3 +170,26 @@ def get_provider(name: str) -> BaseNewsProvider:
     except KeyError as exc:
         supported = ", ".join(sorted({"alpha_vantage", "newsapi"}))
         raise NewsSourceError(f"Unsupported provider '{name}'. Choose one of: {supported}.") from exc
+
+
+def load_local_env(env_path: Path | None = None) -> None:
+    global _ENV_LOADED
+    if _ENV_LOADED:
+        return
+
+    path = env_path or Path(__file__).resolve().parents[2] / ".env"
+    if not path.exists():
+        _ENV_LOADED = True
+        return
+
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and value and key not in os.environ:
+            os.environ[key] = value
+
+    _ENV_LOADED = True

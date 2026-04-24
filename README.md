@@ -46,6 +46,15 @@ $env:NEWSAPI_API_KEY="your_key_here"
 python -m stock_sentiment_analyzer.cli --provider newsapi --query "Nvidia earnings" --limit 5
 ```
 
+Frontend:
+
+```bash
+$env:PYTHONPATH="src"
+python -m stock_sentiment_analyzer.webapp
+```
+
+Then open [http://127.0.0.1:8000](http://127.0.0.1:8000).
+
 Run the tests:
 
 ```bash
@@ -92,3 +101,4 @@ Notes:
 - Alpha Vantage works best when you already know the ticker.
 - NewsAPI is useful for broader keyword searches like earnings themes, companies, or sectors.
 - This workspace cannot guarantee live API verification without your keys and network approval, so the provider tests mock official response shapes locally.
+- The frontend uses the same analyzer and live provider layer as the CLI, so you can test manual and live headline flows in the browser.

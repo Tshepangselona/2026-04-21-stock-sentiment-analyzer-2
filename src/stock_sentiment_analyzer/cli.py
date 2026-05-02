@@ -10,6 +10,14 @@ from stock_sentiment_analyzer.analyzer import HeadlineInput, SentimentAnalyzer
 from stock_sentiment_analyzer.data_sources import FetchRequest, get_provider
 
 
+def safe_print(text: str) -> None:
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        fallback = text.encode(sys.stdout.encoding or "utf-8", errors="replace").decode(sys.stdout.encoding or "utf-8")
+        print(fallback)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Analyze stock-related headline sentiment.")
     parser.add_argument(
@@ -132,22 +140,22 @@ def main() -> int:
 
     result = SentimentAnalyzer().analyze(headlines)
     if args.format == "json":
-        print(json.dumps(result.to_dict(), indent=2))
+        safe_print(json.dumps(result.to_dict(), indent=2))
         return 0
 
-    print(f"Overall sentiment: {result.overall_label} ({result.average_score:+.2f})")
-    print(f"Confidence: {result.confidence:.2f}")
+    safe_print(f"Overall sentiment: {result.overall_label} ({result.average_score:+.2f})")
+    safe_print(f"Confidence: {result.confidence:.2f}")
     if args.provider:
         env_hint = _provider_env_var(args.provider)
         provider_key_state = "set" if os.getenv(env_hint) else "missing"
-        print(f"Live provider: {args.provider} ({env_hint} {provider_key_state})")
-    print(
+        safe_print(f"Live provider: {args.provider} ({env_hint} {provider_key_state})")
+    safe_print(
         "Breakdown: "
         f"{result.bullish_count} bullish, "
         f"{result.bearish_count} bearish, "
         f"{result.neutral_count} neutral"
     )
-    print("")
+    safe_print("")
     for item in result.headlines:
         metadata = []
         if item.ticker:
@@ -157,9 +165,9 @@ def main() -> int:
         metadata_text = f" [{', '.join(metadata)}]" if metadata else ""
         positives = ", ".join(item.matched_positive_terms) if item.matched_positive_terms else "none"
         negatives = ", ".join(item.matched_negative_terms) if item.matched_negative_terms else "none"
-        print(f"- {item.label:17} {item.score:+.2f} | {item.headline}{metadata_text}")
-        print(f"  positive terms: {positives}")
-        print(f"  negative terms: {negatives}")
+        safe_print(f"- {item.label:17} {item.score:+.2f} | {item.headline}{metadata_text}")
+        safe_print(f"  positive terms: {positives}")
+        safe_print(f"  negative terms: {negatives}")
     return 0
 
 

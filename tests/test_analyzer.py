@@ -86,6 +86,30 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(headlines[0].ticker, "MSFT")
         self.assertEqual(headlines[0].source, "Reuters")
 
+    @patch.dict("os.environ", {"ALPHA_VANTAGE_API_KEY": "demo"})
+    def test_alpha_vantage_filters_irrelevant_articles(self) -> None:
+        provider = AlphaVantageNewsProvider()
+        payload = {
+            "feed": [
+                {
+                    "title": "Nvidia surges after strong AI chip demand",
+                    "source": "Reuters",
+                    "ticker_sentiment": [{"ticker": "NVDA", "relevance_score": "0.92"}],
+                },
+                {
+                    "title": "Unrelated bank stock moves higher after dividend hike",
+                    "source": "MarketWatch",
+                    "ticker_sentiment": [{"ticker": "JPM", "relevance_score": "0.88"}],
+                },
+            ]
+        }
+
+        with patch.object(provider, "_request_json", return_value=payload):
+            headlines = provider.fetch(FetchRequest(ticker="NVDA", limit=5))
+
+        self.assertEqual(len(headlines), 1)
+        self.assertIn("Nvidia", headlines[0].headline)
+
     @patch.dict("os.environ", {"NEWSAPI_API_KEY": "demo"})
     def test_newsapi_maps_articles(self) -> None:
         provider = NewsApiProvider()
@@ -105,6 +129,23 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(len(headlines), 1)
         self.assertEqual(headlines[0].ticker, "TSLA")
         self.assertEqual(headlines[0].source, "Bloomberg")
+
+    @patch.dict("os.environ", {"NEWSAPI_API_KEY": "demo"})
+    def test_newsapi_prefers_matching_query_terms(self) -> None:
+        provider = NewsApiProvider()
+        payload = {
+            "status": "ok",
+            "articles": [
+                {"title": "Nvidia earnings beat expectations as AI revenue jumps", "source": {"name": "CNBC"}},
+                {"title": "Oil prices drift lower in quiet session", "source": {"name": "Reuters"}},
+            ],
+        }
+
+        with patch.object(provider, "_request_json", return_value=payload):
+            headlines = provider.fetch(FetchRequest(query="Nvidia earnings", limit=5))
+
+        self.assertEqual(len(headlines), 1)
+        self.assertIn("Nvidia", headlines[0].headline)
 
 
 if __name__ == "__main__":

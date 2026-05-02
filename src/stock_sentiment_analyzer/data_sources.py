@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import json
 import os
 from pathlib import Path
+import re
 from typing import Any
 from urllib.parse import urlencode
 from urllib.request import urlopen
@@ -83,7 +84,8 @@ class AlphaVantageNewsProvider(BaseNewsProvider):
             raise NewsSourceError("Alpha Vantage response did not include a 'feed' array.")
 
         headlines: list[HeadlineInput] = []
-        for article in feed[: request.limit]:
+        ranked_articles = self._rank_articles(feed, request)
+        for article in ranked_articles[: request.limit]:
             if not isinstance(article, dict):
                 continue
             title = article.get("title")
@@ -100,6 +102,48 @@ class AlphaVantageNewsProvider(BaseNewsProvider):
                 )
             )
         return headlines
+
+    def _rank_articles(self, feed: list[Any], request: FetchRequest) -> list[dict[str, Any]]:
+        ranked: list[tuple[float, dict[str, Any]]] = []
+        for article in feed:
+            if not isinstance(article, dict):
+                continue
+            score = self._relevance_score(article, request)
+            if score <= 0:
+                continue
+            ranked.append((score, article))
+        ranked.sort(key=lambda item: item[0], reverse=True)
+        return [article for _, article in ranked]
+
+    def _relevance_score(self, article: dict[str, Any], request: FetchRequest) -> float:
+        score = 0.0
+        title = article.get("title")
+        if not isinstance(title, str):
+            return score
+        lowered_title = title.casefold()
+
+        if request.ticker:
+            ticker = request.ticker.upper()
+            for entry in article.get("ticker_sentiment", []):
+                if not isinstance(entry, dict):
+                    continue
+                if str(entry.get("ticker", "")).upper() == ticker:
+                    score += 4.0
+                    relevance = entry.get("relevance_score")
+                    try:
+                        score += float(relevance)
+                    except (TypeError, ValueError):
+                        pass
+                    break
+
+            if re.search(rf"\b{re.escape(ticker.casefold())}\b", lowered_title):
+                score += 2.5
+
+        if request.query:
+            query_terms = [term for term in re.findall(r"[a-z0-9]+", request.query.casefold()) if len(term) > 2]
+            score += sum(1.1 for term in query_terms if term in lowered_title)
+
+        return score
 
     def _extract_primary_ticker(self, article: dict[str, Any]) -> str | None:
         sentiment = article.get("ticker_sentiment")
@@ -140,7 +184,8 @@ class NewsApiProvider(BaseNewsProvider):
             raise NewsSourceError("NewsAPI response did not include an 'articles' array.")
 
         headlines: list[HeadlineInput] = []
-        for article in articles[: request.limit]:
+        ranked_articles = self._rank_articles(articles, request)
+        for article in ranked_articles[: request.limit]:
             if not isinstance(article, dict):
                 continue
             title = article.get("title")
@@ -156,6 +201,33 @@ class NewsApiProvider(BaseNewsProvider):
                 )
             )
         return headlines
+
+    def _rank_articles(self, articles: list[Any], request: FetchRequest) -> list[dict[str, Any]]:
+        ranked: list[tuple[float, dict[str, Any]]] = []
+        for article in articles:
+            if not isinstance(article, dict):
+                continue
+            score = self._relevance_score(article, request)
+            if score <= 0:
+                continue
+            ranked.append((score, article))
+        ranked.sort(key=lambda item: item[0], reverse=True)
+        return [article for _, article in ranked]
+
+    def _relevance_score(self, article: dict[str, Any], request: FetchRequest) -> float:
+        title = article.get("title")
+        if not isinstance(title, str):
+            return 0.0
+
+        lowered_title = title.casefold()
+        score = 0.0
+        if request.ticker and request.ticker.casefold() in lowered_title:
+            score += 2.2
+
+        search_text = " ".join(filter(None, [request.query, request.ticker]))
+        search_terms = [term for term in re.findall(r"[a-z0-9]+", search_text.casefold()) if len(term) > 2]
+        score += sum(1.0 for term in search_terms if term in lowered_title)
+        return score if search_terms else 1.0
 
 
 def get_provider(name: str) -> BaseNewsProvider:

@@ -26,24 +26,54 @@ def create_app():
             return _serve_file(start_response, STATIC_DIR / "app.js", "application/javascript; charset=utf-8")
         if method == "POST" and path == "/api/analyze":
             body = _read_json_body(environ)
-            inputs = _normalize_manual_inputs(body)
-            result = analyzer.analyze(inputs)
-            return _json(start_response, 200, result.to_dict())
+            try:
+                inputs = _normalize_manual_inputs(body)
+                result = analyzer.analyze(inputs)
+            except ValueError as exc:
+                return _json(start_response, 400, {"error": str(exc)})
+            return _json(
+                start_response,
+                200,
+                {
+                    **result.to_dict(),
+                    "meta": {
+                        "mode": "manual",
+                        "headline_count_before_filter": len(inputs),
+                        "headline_count_after_filter": result.headline_count,
+                    },
+                },
+            )
         if method == "POST" and path == "/api/fetch":
             body = _read_json_body(environ)
             try:
+                provider_name = str(body.get("provider", ""))
                 provider = get_provider(str(body.get("provider", "")))
+                request = FetchRequest(
+                    ticker=_none_if_blank(body.get("ticker")),
+                    query=_none_if_blank(body.get("query")),
+                    limit=int(body.get("limit", 8)),
+                )
                 headlines = provider.fetch(
-                    FetchRequest(
-                        ticker=_none_if_blank(body.get("ticker")),
-                        query=_none_if_blank(body.get("query")),
-                        limit=int(body.get("limit", 8)),
-                    )
+                    request
                 )
                 result = analyzer.analyze(headlines)
             except (NewsSourceError, ValueError) as exc:
                 return _json(start_response, 400, {"error": str(exc)})
-            return _json(start_response, 200, result.to_dict())
+            return _json(
+                start_response,
+                200,
+                {
+                    **result.to_dict(),
+                    "meta": {
+                        "mode": "live",
+                        "provider": provider_name,
+                        "ticker": request.ticker,
+                        "query": request.query,
+                        "headline_count_before_filter": int(body.get("limit", 8)),
+                        "headline_count_after_filter": result.headline_count,
+                    },
+                },
+            )
 
         return _json(start_response, 404, {"error": "Not found"})
 

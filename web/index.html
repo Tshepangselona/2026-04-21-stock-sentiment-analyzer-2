@@ -14,6 +14,12 @@
         <p class="hero-copy">
           Analyze your own headlines or pull live news from a provider, then inspect what actually drove the score.
         </p>
+        <div class="preset-row">
+          <button class="ghost-action" data-preset="ai">Load AI Leaders</button>
+          <button class="ghost-action" data-preset="volatility">Load Volatility Mix</button>
+          <button class="ghost-action" data-live="nvda">Prep NVDA Live Fetch</button>
+          <button class="ghost-action" data-live="macro">Prep Macro Live Fetch</button>
+        </div>
       </header>
 
       <main class="layout">
@@ -64,7 +70,24 @@ AAPL | CNBC | Apple expands buyback program after strong iPhone sales</textarea>
             <h2>Sentiment Snapshot</h2>
             <p id="statusLine">Ready when you are.</p>
           </div>
+          <div id="metaBar" class="meta-bar"></div>
           <div id="summaryCards" class="summary-grid"></div>
+          <div class="insight-grid">
+            <div class="insight-card">
+              <div class="insight-label">Distribution</div>
+              <div id="distributionBars" class="distribution-bars"></div>
+            </div>
+            <div class="insight-card">
+              <div class="insight-label">Strongest Signals</div>
+              <div id="signalCards" class="signal-cards"></div>
+            </div>
+          </div>
+          <div class="filter-bar">
+            <button class="filter-chip is-active" data-filter="all">All</button>
+            <button class="filter-chip" data-filter="bullish">Bullish</button>
+            <button class="filter-chip" data-filter="bearish">Bearish</button>
+            <button class="filter-chip" data-filter="neutral">Neutral</button>
+          </div>
           <div id="headlineResults" class="results-list"></div>
         </section>
       </main>
